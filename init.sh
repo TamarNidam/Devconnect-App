@@ -1,13 +1,12 @@
 #!/bin/bash
 
 # Build Docker image
-docker build -t tamarnidam-webapp:latest .
+docker build -t tamarnidam-webapp:1.0 .
 
-docker volume create db
+#docker volume create db
 
 # Create Docker container
-#docker run -it -p 8000:8000 django-webapp
-docker run -d -p 8000:8000 -v db:/app tamarnidam-webapp:latest
+docker run -d -p 8000:8000 -v db:/app tamarnidam-webapp:1.0
 
 # Display container information
 docker ps -a
