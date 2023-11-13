@@ -1,0 +1,54 @@
+image="tamarnidam-webapp:1.0"
+artifact_registry="me-west1-docker.pkg.dev/devconnect-project/tamar-nidam-artifcts/$image"
+pipeline {
+    agent any
+    stages {
+        stage('Build') {
+            steps {
+                // Build the application
+                sh 'chmod +x init.sh'
+                sh './init.sh'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'docker exec app python manage.py test'
+                sh 'sleep 4'
+                sh 'curl 10.208.0.7:8000'
+            }
+        }
+        stage('Push to Artifact Registry') {
+            when {
+                expression { currentBuild.result == 'SUCCESS' }
+            }
+            steps {
+                // Push the image with version as the commit message to the Artifact Registry
+                sh 'docker tag "$image" "$artifact_registry"'
+                sh 'docker push "$artifact_registry"'
+            }
+        }
+        stage('Deploy to Production') {
+            when {
+                expression { currentBuild.result == 'SUCCESS' }
+            }
+            steps {
+                // Deploy the updated app to the production cluster
+            }
+        }
+    }
+    post {
+        success {
+            sh 'chmod +x deploy.sh'
+            sh './deploy.sh'
+            sh 'rm -rf *'
+        }
+        failure {
+            echo 'The pipeline failed :('
+            sh 'rm -rf *'
+        }
+        always {
+            sh 'chmod +x delete.sh'
+            sh './delete.sh'
+        }
+    }
+}
